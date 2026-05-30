@@ -1,0 +1,5 @@
+{
+    "ENDPOINT": "your-endpoint",
+    "API_KEY": "your-key",
+    "MODEL_DEPLOYMENT_NAME": "Phi-4"
+}
