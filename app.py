@@ -30,46 +30,35 @@ def find_cred_json(start_path: str) -> str | None:
 def initialize_azure_client():
     """Initialize the Azure AI Inference client"""
     global client, phi4_deployment
-    
+
     try:
-        # 1. Locate cred.json anywhere beneath the current directory
-        cwd = os.getcwd()
-        file_path = find_cred_json(cwd)
-        if not file_path:
-            raise FileNotFoundError("cred.json not found under the current directory")
+        endpoint = os.getenv("ENDPOINT", "")
+        api_key = os.getenv("API_KEY", "")
+        phi4_deployment = os.getenv("MODEL_DEPLOYMENT_NAME", "Phi-4")
 
-        # 2. Load and parse the JSON
-        with open(file_path, 'r', encoding='utf-8') as f:
-            cfg = json.load(f)
-        
-        # 3. Extract configuration
-        endpoint = cfg.get("ENDPOINT", "")
-        api_key = cfg.get("API_KEY", "")
-        phi4_deployment = cfg.get("MODEL_DEPLOYMENT_NAME", "Phi-4")
-        
-        print(f"Endpoint:                    {endpoint}")
-        print(f"Model Deployment Name:      {phi4_deployment}")
+        if not endpoint or endpoint == "your-endpoint":
+            raise ValueError("ENDPOINT environment variable is missing or invalid")
 
-        # 4. Create the ChatCompletionsClient
+        if not endpoint.startswith("https://"):
+            raise ValueError("ENDPOINT must start with https://")
+
+        if not api_key:
+            raise ValueError("API_KEY environment variable is missing")
+
+        print(f"Endpoint: {endpoint}")
+        print(f"Model Deployment Name: {phi4_deployment}")
+
         client = ChatCompletionsClient(
             endpoint=endpoint,
             credential=AzureKeyCredential(api_key),
             api_version="2024-05-01-preview"
         )
+
         print("✅ ChatCompletionsClient created successfully!")
         return True
 
-    except FileNotFoundError as e:
-        print(f"❌ File error: {e}")
-        return False
-    except json.JSONDecodeError as e:
-        print(f"❌ JSON error in cred.json: {e}")
-        return False
-    except KeyError as e:
-        print(f"❌ Missing key in config: {e}")
-        return False
     except Exception as e:
-        print(f"❌ Unexpected error: {e}")
+        print(f"❌ Azure client initialization error: {e}")
         return False
 
 def chat_with_phi4_rag(user_question, retrieved_doc):
